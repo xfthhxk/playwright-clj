@@ -1,0 +1,31 @@
+{:deps {org.clojure/clojure {:mvn/version "1.12.3"}
+        com.microsoft.playwright/playwright {:mvn/version "1.55.0"}}
+
+ :paths ["src"]
+
+ :aliases
+ {:build
+  {:ns-default build
+   :deps
+   {io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}
+    slipset/deps-deploy {:mvn/version "0.2.2"}}}
+
+  :dev {}
+  :outdated {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1250"}}
+             :main-opts  ["-m" "antq.core"]}
+
+  :cider
+  {:extra-deps {cider/cider-nrepl {:mvn/version "0.50.2"}}
+   :main-opts  ["-m" "nrepl.cmdline" "--interactive" "--color" "--middleware" "[cider.nrepl/cider-middleware]"]}
+
+  :test
+  {:main-opts   ["-m" "kaocha.runner" "--config-file" "tests.edn"]
+   :extra-paths ["test"]
+   :extra-deps
+   {com.github.seancorfield/expectations {:mvn/version "2.1.201"}
+    lambdaisland/kaocha {:mvn/version "1.91.1392"}
+    hiccup/hiccup {:mvn/version "2.0.0"}
+    info.sunng/ring-jetty9-adapter {:mvn/version "0.39.0"}
+    io.github.tonsky/clj-simple-router {:mvn/version "0.1.2"}
+    ring/ring-core {:mvn/version "1.15.3"}
+    ring/ring-defaults {:mvn/version "0.7.0"}}}}}

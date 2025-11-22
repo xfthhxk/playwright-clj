@@ -1,0 +1,12 @@
+#kaocha/v1
+{:kaocha.hooks/pre-run [playwright.core-test/kaocha-pre-hook!]
+ :kaocha.hooks/post-run [playwright.core-test/kaocha-post-hook!]
+ :tests    [{:id :default
+             :test-paths ["test"]}]
+ :plugins  [:hooks
+            :kaocha.plugin/profiling
+            :kaocha.plugin/print-invocations
+            :kaocha.plugin/notifier]
+ :reporter kaocha.report/documentation
+ :cli-options
+ {:print-config true}}

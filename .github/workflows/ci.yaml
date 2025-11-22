@@ -1,0 +1,61 @@
+# This file must be at `.github/workflows/ci.yaml` in the repository.
+
+name: playwright-clj CI & Deploy
+
+on:
+  push:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out your repository under $GITHUB_WORKSPACE
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # Sets up a Java Development Kit (JDK) environment.
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21' # Long-Term Support (LTS) release
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          # The value must indicate a particular version of the tool, or use 'latest'
+          cli: latest       # Clojure CLI based on tools.deps
+          bb:  latest
+          clj-kondo: latest
+          cljfmt: latest
+
+
+      - name: Run tests
+        env:
+          PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: true
+        run: bb test
+
+      - name: Cache Clojure dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.clojure
+            ~/.gitlibs
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-clojure-${{ hashFiles('**/deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-clojure-
+
+
+      # Deploy to Clojars only when a new tag is pushed
+      - name: Deploy to Clojars
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          # These secrets must be configured in your repository's settings.
+          # Go to Settings > Secrets and variables > Actions > New repository secret
+          # CLOJARS_USERNAME: Your Clojars username.
+          # CLOJARS_TOKEN: Your Clojars deploy token (recommended over a password).
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_TOKEN: ${{ secrets.CLOJARS_TOKEN }}
+        run: bb deploy

@@ -1,0 +1,66 @@
+{:tasks
+ {:requires
+  ([clojure.edn :as edn]
+   [clojure.string :as str]
+   [babashka.fs :as fs])
+
+  :init
+  (do
+    (defn sys-exit
+      [code msg]
+      (println msg)
+      (System/exit code))
+
+    (defn cli-args-map
+      []
+      (->> *command-line-args*
+           (map (comp edn/read-string str/trim))
+           (apply hash-map))))
+
+  clean
+  {:doc "Cleans up any build artifacts"
+   :task (shell "clojure -T:build clean")}
+
+
+  build:jar
+  {:doc "Builds a jar file"
+   :task (shell "clojure -T:build jar")}
+
+
+  install
+  {:doc "Install into local Maven repo cache"
+   :task (shell "clojure -T:build install")}
+
+
+  deploy
+  {:doc "Deploy to clojars."
+   :depends [clean test build:jar]
+   :task (shell "clojure -T:build deploy")}
+
+
+  cider
+  {:doc "Runs the repl"
+   :task (shell "clj -M:dev:test:debug:shared:cider")}
+
+  test
+  {:doc "Runs clojure tests"
+   :task (shell "clojure -M:dev:shared:test default")}
+
+  test:ff
+  {:doc "Runs clojure tests stopping on first failure."
+   :task (shell "clojure -M:dev:shared:test default --fail-fast")}
+
+  test:focus
+  {:doc "Runs a specific clojure tests referenced by namespace or fully qualified var."
+   :task (let [named-test (first *command-line-args*)]
+           (when-not named-test
+             (sys-exit 1 "no namespace or fully qualified var specified"))
+           (shell (str "clojure -M:dev:shared:test --focus " named-test)))}
+
+
+  outdated
+  {:doc "Lists outdated dependencies"
+   :task (let [{:keys [upgrade]} (cli-args-map)
+               upgrade-flags (if upgrade "--upgrade --force --download" "")
+               cmd (format "clojure -M:outdated %s" upgrade-flags)]
+           (shell {:continue true} cmd))}}}

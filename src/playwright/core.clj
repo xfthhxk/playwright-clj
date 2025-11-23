@@ -116,9 +116,9 @@
 
 
 (defn ->page
-  ([]
+  (^Page []
    (->page (->browser-context)))
-  ([^BrowserContext bc]
+  (^Page [^BrowserContext bc]
    (.newPage bc)))
 
 
@@ -192,6 +192,10 @@
   ([^Page p timeout-ms]
    (.setDefaultTimeout p timeout-ms)))
 
+
+(defn page?
+  [x]
+  (instance? Page x))
 
 (defn locator?
   [x]
@@ -701,5 +705,37 @@
 
 
 (defn set-page!
+  "Sets `*page*` by using `alter-var-root`."
   [pg]
   (alter-var-root #'*page* (constantly pg)))
+
+(defmacro with-page
+  [pg & body]
+  `(binding [*page* ~pg]
+     ~@body))
+
+(defmacro with-open-page
+  "Creates a new page bound to `*page*` and navigate's to the specified `url`.
+  The new page is created from a new browser context. Upon exit of this block
+  the page will be closed and the binding to `*page*` undone."
+  [url & body]
+  `(with-open [pg# (->page)]
+     (navigate pg# ~url)
+     (with-page pg#
+       ~@body)))
+
+(defmacro with-open-page-debug
+  "Like `with-open-page` but alter-var-root's the `*page*` and does not close it
+  to make it available for debugging. It is up to the user to call `close!` on the
+  `*page*`"
+  [url & body]
+  `(let [pg# (->page)]
+     (set-page! pg#)
+     (navigate ~url)
+     ~@body))
+
+(defn end-open-page-debug!
+  "Convenience fn to clean up resources/state creted in `with-open-page-debug`"
+  []
+  (close! *page*)
+  (set-page! nil))

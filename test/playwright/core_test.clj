@@ -1,9 +1,9 @@
 (ns playwright.core-test
   (:require
-   [playwright.core :as pw]
+   [playwright.core :as pw :refer [with-open-page with-open-page-debug]]
    [playwright.server :as server]
    [clojure.test :refer [deftest]]
-   [expectations.clojure.test :refer [expect use-fixtures]]))
+   [expectations.clojure.test :refer [expect]]))
 
 
 (defn setup
@@ -62,32 +62,49 @@
     (expect true (pw/assert-attached (pw/locator pg "span.greeting")))
     (expect true (pw/assert-text (pw/locator pg "span.greeting") "Welcome Jean-Luc!"))))
 
-(deftest login-with-page-binding-test
-  (with-open [pg (pw/->page)]
-    (binding [pw/*page* pg]
-      (pw/navigate "/")
+(deftest login-with-open-page-test
+  (with-open-page "/"
+    (expect {:data-testid "username"
+             :id "username"
+             :name "login/username"
+             :placeholder "Username"
+             :type "text"}
+            (pw/attributes "input[name='login/username']"))
 
-      (expect {:data-testid "username"
-               :id "username"
-               :name "login/username"
-               :placeholder "Username"
-               :type "text"}
-              (pw/attributes "input[name='login/username']"))
+    (pw/fill "input[name='login/username']"
+             "picard@starfleet.org")
 
+    (pw/fill "input[name='login/password']"
+             "enterprise")
 
-      (pw/fill "input[name='login/username']"
-               "picard@starfleet.org")
+    (pw/click "button[name='login']")
 
-      (pw/fill "input[name='login/password']"
-               "enterprise")
-
-      (pw/click "button[name='login']" :force? true)
-
-      (expect true (pw/assert-title "Main"))
-      (expect true (pw/assert-attached "span.greeting"))
-      (expect true (pw/assert-text "span.greeting" "Welcome Jean-Luc!")))))
-
+    (expect true (pw/assert-title "Main"))
+    (expect true (pw/assert-attached "span.greeting"))
+    (expect true (pw/assert-text "span.greeting" "Welcome Jean-Luc!"))))
 
 (comment
-  (setup)
+
+  ;; example of debugging
+  (with-open-page-debug "/"
+    (expect {:data-testid "username"
+             :id "username"
+             :name "login/username"
+             :placeholder "Username"
+             :type "text"}
+            (pw/attributes "input[name='login/username']"))
+
+    (pw/fill "input[name='login/username']"
+             "picard@starfleet.org")
+
+    (pw/fill "input[name='login/password']"
+             "enterprise"))
+
+  ;; *page* is still bound so can debug
+  (pw/attributes "input[type='password']")
+  (pw/attributes "button")
+
+  ;; cleanup
+  (pw/end-open-page-debug!)
+  ;; done with example
   )

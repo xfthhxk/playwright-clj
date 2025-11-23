@@ -1,9 +1,10 @@
 (ns playwright.core
   "Playwright wrapper."
-  (:refer-clojure :exclude [count])
+  (:refer-clojure :exclude [count assert])
   (:require
    [clojure.string :as str]
-   [clojure.java.io :as io])
+   [clojure.java.io :as io]
+   [clojure.test :as test])
   (:import
    (java.net URI)
    (java.nio.file Path Paths)
@@ -28,7 +29,8 @@
     Page$ScreenshotOptions
     Playwright)
    (com.microsoft.playwright.assertions PlaywrightAssertions LocatorAssertions)
-   (com.microsoft.playwright.options AriaRole SelectOption WaitForSelectorState)))
+   (com.microsoft.playwright.options AriaRole SelectOption WaitForSelectorState)
+   (org.opentest4j AssertionFailedError)))
 
 (set! *warn-on-reflection* true)
 
@@ -552,7 +554,7 @@
       (update-keys keyword)))
 
 
-(defn assert-title
+(defn ^{:assert/page-id :title} assert-title
   ([s]
    (assert-title *page* s))
   ([^Page p s]
@@ -562,8 +564,7 @@
        (.hasTitle a ^Pattern s))
      true)))
 
-
-(defn assert-url
+(defn ^{:assert/page-id :url} assert-url
   ([s]
    (assert-url *page* s))
   ([^Page p s]
@@ -574,131 +575,132 @@
      true)))
 
 
-(defn assert-contains-class
+(defn ^{:assert/locator-id :contains-class} assert-contains-class
   [loc s]
   (if (string? s)
     (.containsClass (PlaywrightAssertions/assertThat (as-locator loc)) ^String s)
     (.containsClass (PlaywrightAssertions/assertThat (as-locator loc)) (ArrayList/new ^Collection s)))
   true)
 
-(defn assert-contains-text
+(defn ^{:assert/locator-id :contains-text} assert-contains-text
   [loc ^String s]
   (.containsText (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
-(defn assert-accessible-description
+(defn ^{:assert/locator-id :accessible-description} assert-accessible-description
   [loc ^String s]
   (.hasAccessibleDescription (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
 
-(defn assert-accessible-error-message
+(defn ^{:assert/locator-id :accessible-error-message} assert-accessible-error-message
   [loc ^String s]
   (.hasAccessibleErrorMessage (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
-(defn assert-accessible-name
+(defn ^{:assert/locator-id :accessible-name} assert-accessible-name
   [loc ^String s]
   (.hasAccessibleName (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
-(defn assert-attribute
+(defn ^{:assert/locator-id :attribute} assert-attribute
   [loc ^String attr-nm ^String attr-val]
   (.hasAttribute (PlaywrightAssertions/assertThat (as-locator loc)) attr-nm attr-val)
   true)
 
-(defn assert-class
+(defn ^{:assert/locator-id :class} assert-class
   "Must fully match element's `class` attribute"
   [loc ^String s]
   (.hasClass (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
-(defn assert-count
+(defn ^{:assert/locator-id :count} assert-count
   [loc n]
   (.hasCount (PlaywrightAssertions/assertThat (as-locator loc)) n)
   true)
 
 
-(defn assert-id
+(defn ^{:assert/locator-id :id} assert-id
   [loc ^String id]
   (.hasId (PlaywrightAssertions/assertThat (as-locator loc)) id)
   true)
 
-(defn assert-role
+(defn ^{:assert/locator-id :role} assert-role
   [loc role]
-  (.hasRole (PlaywrightAssertions/assertThat (as-locator loc)) (-> role
-                                                    name
-                                                    str/upper-case
-                                                    AriaRole/valueOf))
+  (.hasRole (PlaywrightAssertions/assertThat (as-locator loc))
+            (-> role
+                name
+                str/upper-case
+                AriaRole/valueOf))
   true)
 
-(defn assert-text
+(defn ^{:assert/locator-id :text} assert-text
   [loc ^String s]
   (.hasText (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
-(defn assert-value
+(defn ^{:assert/locator-id :value} assert-value
   [loc ^String s]
   (.hasValue (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
 
 
-(defn assert-values
+(defn ^{:assert/locator-id :values} assert-values
   [loc xs]
   (.hasValues (PlaywrightAssertions/assertThat (as-locator loc)) ^String/1 (into-array xs))
   true)
 
-(defn assert-attached
+(defn ^{:assert/locator-id :attached} assert-attached
   [loc]
   (.isAttached (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-checked
+(defn ^{:assert/locator-id :checked} assert-checked
   [loc]
   (.isChecked (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-disabled
+(defn ^{:assert/locator-id :disabled} assert-disabled
   [loc]
   (.isDisabled (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-editable
+(defn ^{:assert/locator-id :editable} assert-editable
   [loc]
   (.isEditable (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-empty
+(defn ^{:assert/locator-id :empty} assert-empty
   [loc]
   (.isEmpty (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-enabled
+(defn ^{:assert/locator-id :enabled} assert-enabled
   [loc]
   (.isEnabled (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-focused
+(defn ^{:assert/locator-id :focused} assert-focused
   [loc]
   (.isFocused (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-hidden
+(defn ^{:assert/locator-id :hidden} assert-hidden
   [loc]
   (.isHidden (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-in-viewport
+(defn ^{:assert/locator-id :in-viewport} assert-in-viewport
   [loc]
   (.isInViewport (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-visible
+(defn ^{:assert/locator-id :visible} assert-visible
   [loc]
   (.isVisible (PlaywrightAssertions/assertThat (as-locator loc)))
   true)
 
-(defn assert-matches-aria-snapshot
+(defn ^{:assert/locator-id :matches-aria-snapshot} assert-matches-aria-snapshot
   [loc s]
   (.matchesAriaSnapshot (PlaywrightAssertions/assertThat (as-locator loc)) s)
   true)
@@ -739,3 +741,59 @@
   []
   (close! *page*)
   (set-page! nil))
+
+
+(defn- ->id->assert-fn
+  [kw]
+  (dissoc
+   (->> (ns-publics *ns*)
+        vals
+        (map (juxt (comp kw meta)
+                   identity))
+        (into {}))
+   nil))
+
+(def ^:private page-kw->assert-fn
+  (->id->assert-fn :assert/page-id))
+
+(def ^:private locator-kw->assert-fn
+  (->id->assert-fn :assert/locator-id))
+
+
+
+(defn assert-page
+  [kw & more]
+  (let [assert-fn (get page-kw->assert-fn kw)]
+    (when-not assert-fn
+      (throw (ex-info (format "No page assertion fn for keyword `%s`" kw) {:keyword kw})))
+    (test/is (apply assert-fn *page* more))))
+
+(defn assert
+  [loc kw & more]
+  (let [assert-fn (get locator-kw->assert-fn kw)]
+    (when-not assert-fn
+      (throw (ex-info (format "No locator assertion fn for keyword `%s`" kw) {:keyword kw})))
+    (test/is (apply assert-fn (as-locator loc) more))))
+
+
+(defmethod test/assert-expr 'playwright/page [msg form]
+  (let [[_ kw & more] form
+        assert-fn (get page-kw->assert-fn kw)]
+    (when-not assert-fn
+      (throw (ex-info (format "No page assertion fn for keyword `%s`" kw) {:keyword kw})))
+    `(try
+       (~assert-fn *page* ~@more)
+       (catch AssertionFailedError e#
+         (test/do-report {:type :fail :message ~msg
+                          :expected '~form :actual e#})))))
+
+(defmethod test/assert-expr 'playwright/locator [msg form]
+  (let [[_ loc kw & more] form
+        assert-fn (get locator-kw->assert-fn kw)]
+    (when-not assert-fn
+      (throw (ex-info (format "No locator assertion fn for keyword `%s`" kw) {:keyword kw})))
+    `(try
+       (~assert-fn ~loc ~@more)
+       (catch AssertionFailedError e#
+         (test/do-report {:type :fail :message ~msg
+                          :expected '~form :actual e#})))))

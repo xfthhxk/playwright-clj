@@ -2,7 +2,7 @@
   (:require
    [playwright.core :as pw :refer [with-open-page with-open-page-debug]]
    [playwright.server :as server]
-   [clojure.test :refer [deftest]]
+   [clojure.test :refer [deftest is]]
    [expectations.clojure.test :refer [expect]]))
 
 
@@ -83,7 +83,50 @@
     (expect true (pw/assert-attached "span.greeting"))
     (expect true (pw/assert-text "span.greeting" "Welcome Jean-Luc!"))))
 
+(deftest login-with-open-page-asserts-test
+  (with-open-page "/"
+    (expect {:data-testid "username"
+             :id "username"
+             :name "login/username"
+             :placeholder "Username"
+             :type "text"}
+            (pw/attributes "input[name='login/username']"))
+
+    (pw/fill "input[name='login/username']"
+             "picard@starfleet.org")
+
+    (pw/fill "input[name='login/password']"
+             "enterprise")
+
+    (pw/click "button[name='login']")
+
+    (pw/assert-page :title "Main")
+    (pw/assert "span.greeting" :attached)
+    (pw/assert "span.greeting" :text "Welcome Jean-Luc!")))
+
+(deftest login-with-open-page-is-test
+  (with-open-page "/"
+    (expect {:data-testid "username"
+             :id "username"
+             :name "login/username"
+             :placeholder "Username"
+             :type "text"}
+            (pw/attributes "input[name='login/username']"))
+
+    (pw/fill "input[name='login/username']"
+             "picard@starfleet.org")
+
+    (pw/fill "input[name='login/password']"
+             "enterprise")
+
+    (pw/click "button[name='login']")
+
+    (is (playwright/page :title "Main"))
+    (is (playwright/locator "span.greeting" :attached))
+    (is (playwright/locator "span.greeting" :text "Welcome Jean-Luc!"))))
+
 (comment
+  (setup)
 
   ;; example of debugging
   (with-open-page-debug "/"
@@ -102,9 +145,28 @@
 
   ;; *page* is still bound so can debug
   (pw/attributes "input[type='password']")
+
+  (pw/assert-page :title "Main")
+
   (pw/attributes "button")
 
   ;; cleanup
   (pw/end-open-page-debug!)
+
   ;; done with example
+  )
+
+(comment
+  (pw/expect "Main" :id "input[type='password']" )
+
+  (expect 1 2)
+
+  (pw/assert-page :title "Login")
+
+  (pw/assert-page :title "Main")
+
+  (pw/assert-page :url "Main")
+  (pw/assert "input[type='password']" :id "hello")
+  (pw/assert "span.greeting" :attached)
+  (pw/assert :role )
   )

@@ -822,10 +822,6 @@
         (into {}))
    nil))
 
-(->> (ns-publics *ns*)
-     vals)
-
-(meta #'assert-id)
 
 (def ^:private assert-id->fn
   (->id->assert-fn :assert/id))
@@ -833,8 +829,6 @@
 (defn ^:no-doc lookup-assert-fn
   [kw]
   (get assert-id->fn kw))
-
-
 
 (defn ^:no-doc is-page
   [opts pg|kw kw|arg & more]
@@ -870,12 +864,19 @@
         (test/do-report {:type :fail :message (ex-message e)
                          :expected form :actual e})))))
 
-(defmacro is
-  [& [x :as args]]
+(defmacro ^:no-doc is*
+  [opts & [x :as args]]
   `(let [pg?# (or (page? ~x)
                   (and (keyword? ~x)
-                       (= "page" (namespace ~x))))
-         opts# {:not? false}]
+                       (= "page" (namespace ~x))))]
      (if pg?#
-       (apply is-page (list* opts# ~@args []))
-       (apply is-loc (list* opts# ~@args [])))))
+       (apply is-page (list* ~opts ~@args []))
+       (apply is-loc (list* ~opts ~@args [])))))
+
+(defmacro is
+  [& args]
+  `(is* {:not? false} ~@args))
+
+(defmacro is-not
+  [& args]
+  `(is* {:not? true} ~@args))

@@ -1,6 +1,6 @@
 (ns playwright.core-test
   (:require
-   [playwright.core :as pw :refer [is with-open-page with-open-page-debug]]
+   [playwright.core :as pw :refer [is is-not with-open-page with-open-page-debug]]
    [playwright.server :as server]
    [clojure.test :refer [deftest]]
    [expectations.clojure.test :refer [expect]]))
@@ -44,8 +44,11 @@
 (deftest login-test
   (with-open-page "/"
     (is :page/title "Login")
+    (is-not :page/title "hi")
     (is username-field :id "username")
+    (is-not username-field :id "meow")
     (is username-field :attribute "name" "login/username")
+    (is-not username-field :attribute "name" "meow")
     (is username-field :attribute :name "login/username") ;; attr can be a keyword
     (is login-button :role "button")
 

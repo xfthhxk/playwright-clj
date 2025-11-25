@@ -1,8 +1,8 @@
 (ns playwright.core-test
   (:require
-   [playwright.core :as pw :refer [with-open-page with-open-page-debug]]
+   [playwright.core :as pw :refer [is with-open-page with-open-page-debug]]
    [playwright.server :as server]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest]]
    [expectations.clojure.test :refer [expect]]))
 
 
@@ -34,139 +34,66 @@
   (teardown)
   result)
 
+(def username-field "input[name='login/username']")
+(def password-field "input[name='login/password']")
+(def login-button "button[name='login']")
+
+(def username-value "picard@starfleet.org")
+(def password-value "enterprise")
 
 (deftest login-test
+  (with-open-page "/"
+    (is :page/title "Login")
+    (is username-field :id "username")
+    (is username-field :attribute "name" "login/username")
+    (is username-field :attribute :name "login/username") ;; attr can be a keyword
+    (is login-button :role "button")
+
+    (pw/fill username-field username-value)
+    (pw/fill password-field password-value)
+    (pw/click login-button)
+
+    (is :page/title "Main")
+    (is "span.greeting" :attached)
+    (is "span.greeting" :text "Welcome Jean-Luc!")))
+
+(deftest verbose-login-test
   (with-open [pg (pw/->page)]
     (pw/navigate pg "/")
+    (expect true (pw/assert-title pg "Login"))
 
-    (expect {:data-testid "username"
-             :id "username"
-             :name "login/username"
-             :placeholder "Username"
-             :type "text"}
-            (-> pg
-                (pw/locator "input[name='login/username']")
-                pw/attributes))
-
-
-    (pw/fill (pw/locator pg "input[name='login/username']")
-             "picard@starfleet.org")
-
-    (pw/fill (pw/locator pg "input[name='login/password']")
-             "enterprise")
-
-    (pw/click (pw/get-by-role pg :button {:name "Login"})
-              :force? true)
+    (pw/fill (pw/locator pg username-field) username-value)
+    (pw/fill (pw/locator pg password-field) password-value)
+    (pw/click (pw/get-by-role pg :button {:name "Login"}))
 
     (expect true (pw/assert-title pg "Main"))
     (expect true (pw/assert-attached (pw/locator pg "span.greeting")))
     (expect true (pw/assert-text (pw/locator pg "span.greeting") "Welcome Jean-Luc!"))))
 
-(deftest login-with-open-page-test
+
+(deftest attributes-test
   (with-open-page "/"
     (expect {:data-testid "username"
              :id "username"
              :name "login/username"
              :placeholder "Username"
              :type "text"}
-            (pw/attributes "input[name='login/username']"))
-
-    (pw/fill "input[name='login/username']"
-             "picard@starfleet.org")
-
-    (pw/fill "input[name='login/password']"
-             "enterprise")
-
-    (pw/click "button[name='login']")
-
-    (expect true (pw/assert-title "Main"))
-    (expect true (pw/assert-attached "span.greeting"))
-    (expect true (pw/assert-text "span.greeting" "Welcome Jean-Luc!"))))
-
-(deftest login-with-open-page-asserts-test
-  (with-open-page "/"
-    (expect {:data-testid "username"
-             :id "username"
-             :name "login/username"
-             :placeholder "Username"
-             :type "text"}
-            (pw/attributes "input[name='login/username']"))
-
-    (pw/fill "input[name='login/username']"
-             "picard@starfleet.org")
-
-    (pw/fill "input[name='login/password']"
-             "enterprise")
-
-    (pw/click "button[name='login']")
-
-    (pw/assert-page :title "Main")
-    (pw/assert "span.greeting" :attached)
-    (pw/assert "span.greeting" :text "Welcome Jean-Luc!")))
-
-(deftest login-with-open-page-is-test
-  (with-open-page "/"
-    (expect {:data-testid "username"
-             :id "username"
-             :name "login/username"
-             :placeholder "Username"
-             :type "text"}
-            (pw/attributes "input[name='login/username']"))
-
-    (pw/fill "input[name='login/username']"
-             "picard@starfleet.org")
-
-    (pw/fill "input[name='login/password']"
-             "enterprise")
-
-    (pw/click "button[name='login']")
-
-    (is (playwright/page :title "Main"))
-    (is (playwright/locator "span.greeting" :attached))
-    (is (playwright/locator "span.greeting" :text "Welcome Jean-Luc!"))))
+            (pw/attributes username-field))))
 
 (comment
   (setup)
 
-  ;; example of debugging
+  ;; debugging example for repl
+  ;; pw/*page* will REMAIN bound
   (with-open-page-debug "/"
-    (expect {:data-testid "username"
-             :id "username"
-             :name "login/username"
-             :placeholder "Username"
-             :type "text"}
-            (pw/attributes "input[name='login/username']"))
+    (pw/fill username-field username-value)
+    (pw/fill password-field password-value)
+    (pw/click login-button)
+    (is :page/title "Main")
+    (is "span.greeting" :attached)
+    (is "span.greeting" :text "Welcome Jean-Luc!"))
 
-    (pw/fill "input[name='login/username']"
-             "picard@starfleet.org")
-
-    (pw/fill "input[name='login/password']"
-             "enterprise"))
-
-  ;; *page* is still bound so can debug
-  (pw/attributes "input[type='password']")
-
-  (pw/assert-page :title "Main")
-
-  (pw/attributes "button")
-
-  ;; cleanup
+  ;; done debugging, clean up
   (pw/end-open-page-debug!)
 
-  ;; done with example
-  )
-
-(comment
-  (pw/expect "Main" :id "input[type='password']" )
-
-  (expect 1 2)
-
-  (pw/assert-page :title "Login")
-
-  (pw/assert-page :title "Main")
-
-  (pw/assert-page :url "Main")
-  (pw/assert "input[type='password']" :id "hello")
-  (pw/assert "span.greeting" :attached)
-  (pw/assert :role )
   )

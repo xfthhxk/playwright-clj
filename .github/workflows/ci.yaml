@@ -13,6 +13,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+
+      - name: Cache Clojure dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.clojure
+            ~/.gitlibs
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-clojure-${{ hashFiles('**/deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-clojure-
+
       # Sets up a Java Development Kit (JDK) environment.
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -35,17 +48,6 @@ jobs:
           PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: true
         run: bb test
 
-      - name: Cache Clojure dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            ~/.clojure
-            ~/.gitlibs
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-clojure-${{ hashFiles('**/deps.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-clojure-
 
 
       # Deploy to Clojars only when a new tag is pushed
